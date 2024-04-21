@@ -63,7 +63,8 @@ const initialBoard = [
 
 const initialGameState = {
   board: initialBoard,
-  currentPlayer: 'white'
+  currentPlayer: 'white',
+  infoMessage: null
 };
 
 const gameState = initialGameState;  // Model
@@ -77,7 +78,14 @@ const infoDisplayElem = document.getElementById("info-display");
 function showGameInBrowser() {
   showBoardInBrowser();
   showPlayerInBrowser();
+  showInfoMessageInBrowser();
 }
+
+function showInfoMessageInBrowser() {
+  infoDisplayElem.textContent = gameState.infoMessage;
+}
+
+let draggedPieceCurrentRowAndCol = null; // { r, c }
 
 function showBoardInBrowser() {
   const squareElems = [];
@@ -93,9 +101,24 @@ function showBoardInBrowser() {
         squareElem.appendChild(pieceToDomElement(piece));
       }
 
+      squareElem.addEventListener("dragstart", (event) => {});
+      squareElem.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        draggedPieceCurrentRowAndCol = { r, c };
+      });
+      squareElem.addEventListener("dragend", (event) => {
+        event.preventDefault();
+        // TODO: This is not the best solution, as it puts piece at last square it moved over
+        //   even if it wasn't dropped at that square but e.g. outside of board.
+        //   But I coulnd't get 'drop' event to trigger, so this is how I got it working for now.
+        //   I should instead get this working via 'drop' event.
+        performMove(r, c, draggedPieceCurrentRowAndCol.r, draggedPieceCurrentRowAndCol.c);
+      });
+
       squareElems.push(squareElem);
     }
   }
+
   gameBoardElem.replaceChildren(...squareElems);
 }
 
@@ -120,6 +143,7 @@ function pieceToDomElement(piece) {
   const pieceElement = createDomElementFromHTML(pieceElementHtml);
 
   pieceElement.classList.add(piece.color);
+  pieceElement.setAttribute('draggable', true);
 
   return pieceElement;
 }
@@ -130,6 +154,13 @@ function printGameToConsole() {
   console.log('================');
   printBoardToConsole();
   printTurnToConsole();
+  printInfoMessageToConsole();
+}
+
+function printInfoMessageToConsole() {
+  if (gameState.infoMessage) {
+    console.log('INFO: ', gameState.infoMessage);
+  }
 }
 
 function printTurnToConsole() {
@@ -171,9 +202,38 @@ function pieceToString(piece) {
 
 // ======== CONTROLLER LOGIC ======== //
 
+function performMove(startRowIdx, startColIdx, endRowIdx, endColIdx) {
+  const moveValidity = checkIfMoveIsValid(startRowIdx, startColIdx, endRowIdx, endColIdx);
+  if (moveValidity === true) {
+    gameState.infoMessage = null;
+    movePiece(startRowIdx, startColIdx, endRowIdx, endColIdx);
+    toggleWhoseTurnItIs();
+  } else {
+    gameState.infoMessage = moveValidity.error;
+  }
+  // TODO: Check if game is over, and if so do something about it.
+  showGameInBrowser();
+  printGameToConsole();
+}
+
+// If move is valid, return true.
+// If move is invalid, return { error: <string> }.
+function checkIfMoveIsValid(startRowIdx, startColIdx, endRowIdx, endColIdx) {
+  const piece = gameState.board[startRowIdx][startColIdx];
+
+  if (piece.color !== gameState.currentPlayer) {
+    return { error: "It's not your turn" };
+  }
+
+  // TODO: Add all the rules! There will be a lot of them.
+
+  return true;
+}
+
 function movePiece(startRowIdx, startColIdx, endRowIdx, endColIdx) {
-  gameState.board[endRowIdx][endColIdx] = gameState.board[startRowIdx][startColIdx];
+  const piece = gameState.board[startRowIdx][startColIdx];
   gameState.board[startRowIdx][startColIdx] = null;
+  gameState.board[endRowIdx][endColIdx] = piece;
 }
 
 function toggleWhoseTurnItIs() {
@@ -195,11 +255,5 @@ function createDomElementFromHTML(htmlString) {
 
 // ========= TOP LEVEL LOGIC ======== //
 
-printGameToConsole();
 showGameInBrowser();
-
-movePiece(0, 0, 5, 5);
-toggleWhoseTurnItIs();
-
 printGameToConsole();
-showGameInBrowser();
