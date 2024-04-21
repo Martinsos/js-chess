@@ -1,0 +1,46 @@
+#gameboard {
+  width: 640px;
+  height: 640px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.square {
+  width: 80px;
+  height: 80px;
+}
+
+.bright {
+  background-color: rgb(222, 249, 196);
+}
+
+.dark {
+  background-color: rgb(34, 118, 68);
+}
+
+/* shaping the pieces */
+.square svg {
+  width: 60px;
+  height: 60px;
+  margin: 5px;
+  position: relative;
+  z-index: -9; /* this ensures that the layer of the square with pieces is at the back */
+}
+
+path {
+  position: relative;
+  z-index: -10; /* this ensures that the path is always behind the SVG */
+}
+
+.piece {
+  position: relative;
+  z-index: 9; /* this ensures that the pieces is always in front the square. This ensures that we're dragging and replacing the actual pieces, not the squares */
+}
+
+.black {
+  fill: rgb(24, 24, 24);
+}
+
+.white {
+  fill: rgb(216, 146, 180);
+}
